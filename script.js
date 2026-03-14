@@ -49,7 +49,7 @@ function startMatch() {
     state.winsA = 0;
     state.winsB = 0;
     state.matchEnded = false;
-    state.history = [{ game: 0, probA: 0.5, probB: 0.5, probDraw: 0 }]; // Initial state
+    state.history = []; // Will be populated by updateDisplay()
 
     // Update UI
     document.getElementById('nameA').textContent = state.playerAName;
@@ -489,7 +489,7 @@ function resetMatch() {
     state.winsA = 0;
     state.winsB = 0;
     state.matchEnded = false;
-    state.history = [{ game: 0, probA: 0.5, probB: 0.5, probDraw: 0 }];
+    state.history = [];
     updateDisplay();
 }
 
