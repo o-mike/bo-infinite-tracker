@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BO∞ Tracker - Bayesian Sequential Testing</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Best-of-Infinite Tracker</h1>
+            <p class="subtitle">Bayesian Sequential Hypothesis Testing</p>
+        </header>
+
+        <div class="setup-panel" id="setupPanel">
+            <h2>Setup</h2>
+            <div class="setup-grid">
+                <div class="input-group">
+                    <label for="playerA">Player A Name:</label>
+                    <input type="text" id="playerA" value="Player A">
+                </div>
+                <div class="input-group">
+                    <label for="playerB">Player B Name:</label>
+                    <input type="text" id="playerB" value="Player B">
+                </div>
+                <div class="input-group">
+                    <label for="threshold">Target Certainty (%):</label>
+                    <input type="number" id="threshold" value="95" min="50" max="99.9" step="0.1">
+                    <span class="help-text">Confidence threshold to declare winner</span>
+                </div>
+                <div class="input-group">
+                    <label for="rope">ROPE Margin (%):</label>
+                    <input type="number" id="rope" value="5" min="0" max="20" step="0.5">
+                    <span class="help-text">Region of Practical Equivalence (0 = no margin)</span>
+                </div>
+                <div class="input-group">
+                    <label for="maxGames">Max Games (Optional):</label>
+                    <input type="number" id="maxGames" value="100" min="10" max="1000">
+                    <span class="help-text">Auto-stop if inconclusive</span>
+                </div>
+                <div class="input-group">
+                    <label for="prior">Prior Distribution:</label>
+                    <select id="prior">
+                        <option value="uniform">Uniform Beta(1,1)</option>
+                        <option value="jeffreys">Jeffreys Beta(0.5,0.5)</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="startMatch()">Start Match</button>
+        </div>
+
+        <div class="match-panel hidden" id="matchPanel">
+            <div class="scoreboard">
+                <div class="player player-a">
+                    <h2 id="nameA">Player A</h2>
+                    <div class="score" id="scoreA">0</div>
+                </div>
+                <div class="vs">vs</div>
+                <div class="player player-b">
+                    <h2 id="nameB">Player B</h2>
+                    <div class="score" id="scoreB">0</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn-win btn-win-a" onclick="recordWin('A')">
+                    <span id="winButtonA">Player A Wins</span>
+                </button>
+                <button class="btn-win btn-win-b" onclick="recordWin('B')">
+                    <span id="winButtonB">Player B Wins</span>
+                </button>
+            </div>
+
+            <div class="certainty-display">
+                <h3>Posterior Probabilities</h3>
+                <div class="prob-bars">
+                    <div class="prob-bar">
+                        <label id="probALabel">Player A is better:</label>
+                        <div class="bar-container">
+                            <div class="bar bar-a" id="barA" style="width: 50%"></div>
+                            <span class="bar-value" id="probAValue">50.0%</span>
+                        </div>
+                    </div>
+                    <div class="prob-bar">
+                        <label>Practically Equal (ROPE):</label>
+                        <div class="bar-container">
+                            <div class="bar bar-draw" id="barDraw" style="width: 0%"></div>
+                            <span class="bar-value" id="probDrawValue">0.0%</span>
+                        </div>
+                    </div>
+                    <div class="prob-bar">
+                        <label id="probBLabel">Player B is better:</label>
+                        <div class="bar-container">
+                            <div class="bar bar-b" id="barB" style="width: 50%"></div>
+                            <span class="bar-value" id="probBValue">50.0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="betaChart"></canvas>
+            </div>
+
+            <div class="stats">
+                <p><strong>Games Played:</strong> <span id="gamesPlayed">0</span></p>
+                <p><strong>Posterior Distribution:</strong> Beta(<span id="alpha">1</span>, <span id="beta">1</span>)</p>
+                <p><strong>Target:</strong> <span id="targetDisplay">95%</span> certainty outside ROPE of ±<span id="ropeDisplay">5%</span></p>
+            </div>
+
+            <button class="btn-secondary" onclick="resetMatch()">Reset Match</button>
+            <button class="btn-secondary" onclick="backToSetup()">New Setup</button>
+        </div>
+
+        <div class="modal hidden" id="resultModal">
+            <div class="modal-content">
+                <h2 id="resultTitle">Winner Decided!</h2>
+                <p id="resultMessage"></p>
+                <canvas id="finalChart"></canvas>
+                <div class="modal-actions">
+                    <button class="btn-primary" onclick="closeModal()">Continue</button>
+                    <button class="btn-secondary" onclick="resetMatch(); closeModal()">New Match</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Beta-Binomial Sequential Testing with ROPE • <a href="https://github.com/yourusername/bo-infinite-tracker" target="_blank">Documentation</a></p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
