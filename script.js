@@ -56,8 +56,13 @@ function startMatch() {
     document.getElementById('nameB').textContent = state.playerBName;
     document.getElementById('winButtonA').textContent = `${state.playerAName} Wins`;
     document.getElementById('winButtonB').textContent = `${state.playerBName} Wins`;
-    document.getElementById('probALabel').textContent = `${state.playerAName} is better:`;
-    document.getElementById('probBLabel').textContent = `${state.playerBName} is better:`;
+    document.getElementById('legendALabel').textContent = `${state.playerAName} is better`;
+    document.getElementById('legendBLabel').textContent = `${state.playerBName} is better`;
+
+    // Update short names for stacked bar labels
+    document.getElementById('nameAShort').textContent = state.playerAName.split(' ')[0];
+    document.getElementById('nameBShort').textContent = state.playerBName.split(' ')[0];
+
     document.getElementById('targetDisplay').textContent = `${(state.threshold * 100).toFixed(1)}%`;
     document.getElementById('ropeDisplay').textContent = `${(state.rope * 100).toFixed(1)}%`;
 
@@ -116,32 +121,43 @@ function updateDisplay() {
     document.getElementById('alpha').textContent = alpha.toFixed(1);
     document.getElementById('beta').textContent = beta.toFixed(1);
 
-    // Update probability bars
-    document.getElementById('barA').style.width = `${probA * 100}%`;
-    document.getElementById('probAValue').textContent = `${(probA * 100).toFixed(1)}%`;
+    // Update stacked bar segments
+    const segmentA = document.getElementById('segmentA');
+    const segmentB = document.getElementById('segmentB');
+    const segmentDraw = document.getElementById('segmentDraw');
 
-    document.getElementById('barB').style.width = `${probB * 100}%`;
-    document.getElementById('probBValue').textContent = `${(probB * 100).toFixed(1)}%`;
+    segmentA.style.width = `${probA * 100}%`;
+    segmentB.style.width = `${probB * 100}%`;
+    segmentDraw.style.width = `${probDraw * 100}%`;
 
-    document.getElementById('barDraw').style.width = `${probDraw * 100}%`;
-    document.getElementById('probDrawValue').textContent = `${(probDraw * 100).toFixed(1)}%`;
+    // Update labels
+    const nameAShort = state.playerAName.split(' ')[0];
+    const nameBShort = state.playerBName.split(' ')[0];
 
-    // Highlight bars approaching threshold
-    updateBarHighlight('barA', probA);
-    updateBarHighlight('barB', probB);
+    document.getElementById('labelA').innerHTML = `<span id="nameAShort">${nameAShort}</span>: ${(probA * 100).toFixed(1)}%`;
+    document.getElementById('labelB').innerHTML = `<span id="nameBShort">${nameBShort}</span>: ${(probB * 100).toFixed(1)}%`;
+
+    if (probDraw > 0.05) {
+        document.getElementById('labelDraw').textContent = `Equal: ${(probDraw * 100).toFixed(1)}%`;
+    } else {
+        document.getElementById('labelDraw').textContent = '';
+    }
+
+    // Highlight segments approaching threshold
+    updateSegmentHighlight(segmentA, probA);
+    updateSegmentHighlight(segmentB, probB);
 
     // Update chart
     updateChart();
 }
 
-function updateBarHighlight(barId, prob) {
-    const bar = document.getElementById(barId);
-    bar.classList.remove('bar-warning', 'bar-success');
+function updateSegmentHighlight(segment, prob) {
+    segment.classList.remove('segment-warning', 'segment-success');
 
     if (prob >= state.threshold) {
-        bar.classList.add('bar-success');
+        segment.classList.add('segment-success');
     } else if (prob >= state.threshold * 0.8) {
-        bar.classList.add('bar-warning');
+        segment.classList.add('segment-warning');
     }
 }
 

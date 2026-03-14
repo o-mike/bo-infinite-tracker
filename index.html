@@ -84,26 +84,30 @@
 
             <div class="certainty-display">
                 <h3>Posterior Probabilities</h3>
-                <div class="prob-bars">
-                    <div class="prob-bar">
-                        <label id="probALabel">Player A is better:</label>
-                        <div class="bar-container">
-                            <div class="bar bar-a" id="barA" style="width: 50%"></div>
-                            <span class="bar-value" id="probAValue">50.0%</span>
+                <div class="stacked-bar-container">
+                    <div class="stacked-bar">
+                        <div class="stacked-segment segment-a" id="segmentA" style="width: 50%">
+                            <span class="segment-label" id="labelA"><span id="nameAShort">A</span>: 50%</span>
+                        </div>
+                        <div class="stacked-segment segment-draw" id="segmentDraw" style="width: 0%">
+                            <span class="segment-label" id="labelDraw"></span>
+                        </div>
+                        <div class="stacked-segment segment-b" id="segmentB" style="width: 50%">
+                            <span class="segment-label" id="labelB"><span id="nameBShort">B</span>: 50%</span>
                         </div>
                     </div>
-                    <div class="prob-bar">
-                        <label>Practically Equal (ROPE):</label>
-                        <div class="bar-container">
-                            <div class="bar bar-draw" id="barDraw" style="width: 0%"></div>
-                            <span class="bar-value" id="probDrawValue">0.0%</span>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color legend-color-a"></div>
+                            <span id="legendALabel">Player A is better</span>
                         </div>
-                    </div>
-                    <div class="prob-bar">
-                        <label id="probBLabel">Player B is better:</label>
-                        <div class="bar-container">
-                            <div class="bar bar-b" id="barB" style="width: 50%"></div>
-                            <span class="bar-value" id="probBValue">50.0%</span>
+                        <div class="legend-item">
+                            <div class="legend-color legend-color-draw"></div>
+                            <span>Practically Equal</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-color-b"></div>
+                            <span id="legendBLabel">Player B is better</span>
                         </div>
                     </div>
                 </div>
