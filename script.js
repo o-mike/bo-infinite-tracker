@@ -11,8 +11,23 @@ let state = {
     playerBName: 'Player B',
     chart: null,
     finalChart: null,
-    matchEnded: false
+    matchEnded: false,
+    history: [] // Track probability evolution over time
 };
+
+// Toggle advanced options
+function toggleAdvanced() {
+    const advancedOptions = document.getElementById('advancedOptions');
+    const toggleText = document.getElementById('advancedToggleText');
+
+    if (advancedOptions.classList.contains('hidden')) {
+        advancedOptions.classList.remove('hidden');
+        toggleText.textContent = '▼ Advanced Options';
+    } else {
+        advancedOptions.classList.add('hidden');
+        toggleText.textContent = '▶ Advanced Options';
+    }
+}
 
 // Start a new match with user settings
 function startMatch() {
@@ -34,6 +49,7 @@ function startMatch() {
     state.winsA = 0;
     state.winsB = 0;
     state.matchEnded = false;
+    state.history = [{ game: 0, probA: 0.5, probB: 0.5, probDraw: 0 }]; // Initial state
 
     // Update UI
     document.getElementById('nameA').textContent = state.playerAName;
@@ -87,6 +103,9 @@ function calculatePosterior() {
 function updateDisplay() {
     const { probA, probB, probDraw, alpha, beta } = calculatePosterior();
     const totalGames = state.winsA + state.winsB;
+
+    // Add to history
+    state.history.push({ game: totalGames, probA, probB, probDraw });
 
     // Update scores
     document.getElementById('scoreA').textContent = state.winsA;
@@ -183,7 +202,7 @@ function closeModal() {
     document.getElementById('resultModal').classList.add('hidden');
 }
 
-// Initialize Chart.js beta distribution visualization
+// Initialize Chart.js for probability evolution over time
 function initChart() {
     const ctx = document.getElementById('betaChart');
 
@@ -191,44 +210,88 @@ function initChart() {
         state.chart.destroy();
     }
 
-    const { chartData, annotations } = getBetaChartData();
-
     state.chart = new Chart(ctx, {
         type: 'line',
-        data: chartData,
+        data: {
+            datasets: [
+                {
+                    label: `${state.playerAName} is better`,
+                    data: [],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: false,
+                    tension: 0.3,
+                    borderWidth: 3
+                },
+                {
+                    label: 'Practically Equal',
+                    data: [],
+                    borderColor: '#9ca3af',
+                    backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                    fill: false,
+                    tension: 0.3,
+                    borderWidth: 2,
+                    borderDash: [5, 5]
+                },
+                {
+                    label: `${state.playerBName} is better`,
+                    data: [],
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    fill: false,
+                    tension: 0.3,
+                    borderWidth: 3
+                }
+            ]
+        },
         options: {
             responsive: true,
             maintainAspectRatio: true,
-            aspectRatio: 2,
+            aspectRatio: 2.5,
             plugins: {
                 title: {
                     display: true,
-                    text: 'Posterior Distribution: P(θ | data)',
+                    text: 'Probability Evolution Over Time',
                     font: { size: 16 }
                 },
                 legend: {
-                    display: true
+                    display: true,
+                    position: 'top'
                 },
                 tooltip: {
                     mode: 'index',
-                    intersect: false
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + (context.parsed.y * 100).toFixed(1) + '%';
+                        }
+                    }
                 }
             },
             scales: {
                 x: {
+                    type: 'linear',
                     title: {
                         display: true,
-                        text: 'θ (Win Probability for Player A)'
+                        text: 'Games Played'
                     },
                     min: 0,
-                    max: 1
+                    ticks: {
+                        stepSize: 1
+                    }
                 },
                 y: {
                     title: {
                         display: true,
-                        text: 'Probability Density'
+                        text: 'Probability'
                     },
-                    beginAtZero: true
+                    min: 0,
+                    max: 1,
+                    ticks: {
+                        callback: function(value) {
+                            return (value * 100).toFixed(0) + '%';
+                        }
+                    }
                 }
             },
             animation: {
@@ -236,105 +299,45 @@ function initChart() {
             }
         }
     });
+
+    updateChart();
 }
 
 function updateChart() {
     if (!state.chart) return;
 
-    const { chartData } = getBetaChartData();
-    state.chart.data = chartData;
-    state.chart.update();
-}
+    // Convert history to chart data format
+    const probAData = state.history.map(h => ({ x: h.game, y: h.probA }));
+    const probDrawData = state.history.map(h => ({ x: h.game, y: h.probDraw }));
+    const probBData = state.history.map(h => ({ x: h.game, y: h.probB }));
 
-function getBetaChartData() {
-    const { alpha, beta } = calculatePosterior();
+    state.chart.data.datasets[0].data = probAData;
+    state.chart.data.datasets[1].data = probDrawData;
+    state.chart.data.datasets[2].data = probBData;
 
-    // Generate points for the Beta PDF
-    const points = 200;
-    const thetaValues = [];
-    const pdfValues = [];
-
-    for (let i = 0; i <= points; i++) {
-        const theta = i / points;
-        thetaValues.push(theta);
-
-        // Beta PDF
-        const pdf = jStat.beta.pdf(theta, alpha, beta);
-        pdfValues.push(pdf);
+    // Add threshold line
+    if (state.history.length > 0) {
+        const maxGame = state.history[state.history.length - 1].game;
+        state.chart.options.plugins.annotation = {
+            annotations: {
+                thresholdLine: {
+                    type: 'line',
+                    yMin: state.threshold,
+                    yMax: state.threshold,
+                    borderColor: 'rgba(0, 0, 0, 0.3)',
+                    borderWidth: 2,
+                    borderDash: [10, 5],
+                    label: {
+                        display: true,
+                        content: `Target: ${(state.threshold * 100).toFixed(0)}%`,
+                        position: 'end'
+                    }
+                }
+            }
+        };
     }
 
-    // Split into regions for coloring
-    const ropeStart = 0.5 - state.rope;
-    const ropeEnd = 0.5 + state.rope;
-
-    const datasets = [];
-
-    // Region A (theta > 0.5 + rope) - Blue
-    const regionAData = thetaValues.map((theta, i) => ({
-        x: theta,
-        y: theta > ropeEnd ? pdfValues[i] : null
-    }));
-    datasets.push({
-        label: `${state.playerAName} Better`,
-        data: regionAData,
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-        fill: 'origin',
-        pointRadius: 0,
-        borderWidth: 2
-    });
-
-    // ROPE region - Gray
-    const ropeData = thetaValues.map((theta, i) => ({
-        x: theta,
-        y: (theta >= ropeStart && theta <= ropeEnd) ? pdfValues[i] : null
-    }));
-    datasets.push({
-        label: 'Practically Equal (ROPE)',
-        data: ropeData,
-        borderColor: '#9ca3af',
-        backgroundColor: 'rgba(156, 163, 175, 0.2)',
-        fill: 'origin',
-        pointRadius: 0,
-        borderWidth: 2
-    });
-
-    // Region B (theta < 0.5 - rope) - Red
-    const regionBData = thetaValues.map((theta, i) => ({
-        x: theta,
-        y: theta < ropeStart ? pdfValues[i] : null
-    }));
-    datasets.push({
-        label: `${state.playerBName} Better`,
-        data: regionBData,
-        borderColor: '#ef4444',
-        backgroundColor: 'rgba(239, 68, 68, 0.2)',
-        fill: 'origin',
-        pointRadius: 0,
-        borderWidth: 2
-    });
-
-    // Full distribution line (for continuity)
-    const fullData = thetaValues.map((theta, i) => ({
-        x: theta,
-        y: pdfValues[i]
-    }));
-    datasets.push({
-        label: 'Full Distribution',
-        data: fullData,
-        borderColor: 'rgba(0, 0, 0, 0.3)',
-        backgroundColor: 'transparent',
-        fill: false,
-        pointRadius: 0,
-        borderWidth: 1,
-        borderDash: [5, 5]
-    });
-
-    return {
-        chartData: {
-            datasets: datasets
-        }
-    };
+    state.chart.update();
 }
 
 function drawFinalChart() {
@@ -344,11 +347,45 @@ function drawFinalChart() {
         state.finalChart.destroy();
     }
 
-    const { chartData } = getBetaChartData();
+    // Convert history to chart data format
+    const probAData = state.history.map(h => ({ x: h.game, y: h.probA }));
+    const probDrawData = state.history.map(h => ({ x: h.game, y: h.probDraw }));
+    const probBData = state.history.map(h => ({ x: h.game, y: h.probB }));
 
     state.finalChart = new Chart(ctx, {
         type: 'line',
-        data: chartData,
+        data: {
+            datasets: [
+                {
+                    label: `${state.playerAName} is better`,
+                    data: probAData,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: false,
+                    tension: 0.3,
+                    borderWidth: 3
+                },
+                {
+                    label: 'Practically Equal',
+                    data: probDrawData,
+                    borderColor: '#9ca3af',
+                    backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                    fill: false,
+                    tension: 0.3,
+                    borderWidth: 2,
+                    borderDash: [5, 5]
+                },
+                {
+                    label: `${state.playerBName} is better`,
+                    data: probBData,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    fill: false,
+                    tension: 0.3,
+                    borderWidth: 3
+                }
+            ]
+        },
         options: {
             responsive: true,
             maintainAspectRatio: true,
@@ -356,28 +393,46 @@ function drawFinalChart() {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Final Posterior Distribution',
+                    text: 'Final Probability Evolution',
                     font: { size: 14 }
                 },
                 legend: {
-                    display: true
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + (context.parsed.y * 100).toFixed(1) + '%';
+                        }
+                    }
                 }
             },
             scales: {
                 x: {
+                    type: 'linear',
                     title: {
                         display: true,
-                        text: 'θ (Win Probability)'
+                        text: 'Games Played'
                     },
-                    min: 0,
-                    max: 1
+                    ticks: {
+                        stepSize: 1
+                    }
                 },
                 y: {
                     title: {
                         display: true,
-                        text: 'Density'
+                        text: 'Probability'
                     },
-                    beginAtZero: true
+                    min: 0,
+                    max: 1,
+                    ticks: {
+                        callback: function(value) {
+                            return (value * 100).toFixed(0) + '%';
+                        }
+                    }
                 }
             }
         }
@@ -389,6 +444,7 @@ function resetMatch() {
     state.winsA = 0;
     state.winsB = 0;
     state.matchEnded = false;
+    state.history = [{ game: 0, probA: 0.5, probB: 0.5, probDraw: 0 }];
     updateDisplay();
 }
 
