@@ -303,24 +303,24 @@ header h1 {
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     white-space: nowrap;
     padding: 0 8px;
-    opacity: 0;
     transition: opacity 0.3s ease;
+}
+
+.stacked-segment {
+    cursor: help;
+    position: relative;
 }
 
 .stacked-segment:hover {
     filter: brightness(1.1);
 }
 
-/* Show label only if segment is wide enough */
-.stacked-segment[style*="width: 0%"] .segment-label,
-.stacked-segment[style*="width: 1%"] .segment-label,
-.stacked-segment[style*="width: 2%"] .segment-label,
-.stacked-segment[style*="width: 3%"] .segment-label,
-.stacked-segment[style*="width: 4%"] .segment-label {
+/* Hide label when segment is too small */
+.stacked-segment.segment-small .segment-label {
     opacity: 0;
 }
 
-.stacked-segment:not([style*="width: 0%"]):not([style*="width: 1%"]):not([style*="width: 2%"]):not([style*="width: 3%"]):not([style*="width: 4%"]) .segment-label {
+.stacked-segment:not(.segment-small) .segment-label {
     opacity: 1;
 }
 
@@ -365,6 +365,11 @@ header h1 {
     gap: 8px;
     font-size: 0.9rem;
     color: #374151;
+}
+
+.legend-item .legend-value {
+    font-weight: 700;
+    color: #1f2937;
 }
 
 .legend-color {

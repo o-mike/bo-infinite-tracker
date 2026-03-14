@@ -126,22 +126,37 @@ function updateDisplay() {
     const segmentB = document.getElementById('segmentB');
     const segmentDraw = document.getElementById('segmentDraw');
 
-    segmentA.style.width = `${probA * 100}%`;
-    segmentB.style.width = `${probB * 100}%`;
-    segmentDraw.style.width = `${probDraw * 100}%`;
+    const probAPercent = probA * 100;
+    const probBPercent = probB * 100;
+    const probDrawPercent = probDraw * 100;
+
+    segmentA.style.width = `${probAPercent}%`;
+    segmentB.style.width = `${probBPercent}%`;
+    segmentDraw.style.width = `${probDrawPercent}%`;
 
     // Update labels
     const nameAShort = state.playerAName.split(' ')[0];
     const nameBShort = state.playerBName.split(' ')[0];
 
-    document.getElementById('labelA').innerHTML = `<span id="nameAShort">${nameAShort}</span>: ${(probA * 100).toFixed(1)}%`;
-    document.getElementById('labelB').innerHTML = `<span id="nameBShort">${nameBShort}</span>: ${(probB * 100).toFixed(1)}%`;
+    document.getElementById('labelA').innerHTML = `<span id="nameAShort">${nameAShort}</span>: ${probAPercent.toFixed(1)}%`;
+    document.getElementById('labelB').innerHTML = `<span id="nameBShort">${nameBShort}</span>: ${probBPercent.toFixed(1)}%`;
 
     if (probDraw > 0.05) {
-        document.getElementById('labelDraw').textContent = `Equal: ${(probDraw * 100).toFixed(1)}%`;
+        document.getElementById('labelDraw').textContent = `Equal: ${probDrawPercent.toFixed(1)}%`;
     } else {
         document.getElementById('labelDraw').textContent = '';
     }
+
+    // Add/remove small class and tooltips based on width
+    const smallThreshold = 8;
+    updateSegmentVisibility(segmentA, probAPercent, `${state.playerAName} is better: ${probAPercent.toFixed(1)}%`);
+    updateSegmentVisibility(segmentB, probBPercent, `${state.playerBName} is better: ${probBPercent.toFixed(1)}%`);
+    updateSegmentVisibility(segmentDraw, probDrawPercent, `Practically Equal: ${probDrawPercent.toFixed(1)}%`);
+
+    // Update legend values
+    document.getElementById('legendAValue').textContent = `${probAPercent.toFixed(1)}%`;
+    document.getElementById('legendBValue').textContent = `${probBPercent.toFixed(1)}%`;
+    document.getElementById('legendDrawValue').textContent = `${probDrawPercent.toFixed(1)}%`;
 
     // Highlight segments approaching threshold
     updateSegmentHighlight(segmentA, probA);
@@ -149,6 +164,20 @@ function updateDisplay() {
 
     // Update chart
     updateChart();
+}
+
+function updateSegmentVisibility(segment, widthPercent, tooltipText) {
+    const smallThreshold = 8;
+
+    // Add/remove small class
+    if (widthPercent < smallThreshold) {
+        segment.classList.add('segment-small');
+    } else {
+        segment.classList.remove('segment-small');
+    }
+
+    // Add tooltip
+    segment.setAttribute('title', tooltipText);
 }
 
 function updateSegmentHighlight(segment, prob) {
